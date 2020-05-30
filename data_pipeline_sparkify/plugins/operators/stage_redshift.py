@@ -3,6 +3,7 @@ from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 from airflow.hooks.postgres_hook import PostgresHook
 
+# TODO: enables read based on timestamp
 class StageToRedshiftOperator(BaseOperator):
     """ Copies the data from a given s3 location to a table in redshift"""
     ui_color = '#358140'
