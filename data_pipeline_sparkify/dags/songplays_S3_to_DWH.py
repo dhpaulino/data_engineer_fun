@@ -42,7 +42,6 @@ CREATE TABLE IF NOT EXISTS public.staging_events(
 
 TRUNCATE  public.staging_events;
 '''
-# FIXME: no data is loaded at staging_events table
 stage_events_to_redshift = StageToRedshiftOperator(
     task_id='Stage_events',
     redshift_conn_id="redshift_conn",
@@ -50,6 +49,6 @@ stage_events_to_redshift = StageToRedshiftOperator(
     output_table="staging_events",
     s3_bucket="udacity-dend",
     s3_key="log_data",
-    copy_parameters="json 's3://udacity-dend/log_json_path.json' timeformat as 'epochmillisecs'",
+    copy_parameters="JSON 's3://udacity-dend/log_json_path.json' timeformat as 'epochmillisecs'",
     dag=dag
 )

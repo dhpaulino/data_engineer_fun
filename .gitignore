@@ -2,3 +2,7 @@ data/
 .ipynb_checkpoints/
 __pycache__
 *.out
+.idea/
+.vscode/
+.DS_Store
+*.parquet

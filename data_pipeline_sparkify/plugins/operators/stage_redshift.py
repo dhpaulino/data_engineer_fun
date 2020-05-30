@@ -21,8 +21,9 @@ class StageToRedshiftOperator(BaseOperator):
 
     def execute(self, context):
         self.hook = PostgresHook(postgres_conn_id=self.redshift_conn_id)
-        copy_sql = f"copy {self.output_table} from 's3://{self.s3_bucket}/{self.s3_key}'\
-                    iam_role '{self.arn_iam_role}' {self.copy_parameters}"
+        copy_sql = f"COPY {self.output_table} FROM 's3://{self.s3_bucket}/{self.s3_key}'\
+                    CREDENTIALS 'aws_iam_role={self.arn_iam_role}'\
+                    {self.copy_parameters}"
         self.log.info('Executing COPY command...')
         self.logger.info(copy_sql)
         self.hook.run(copy_sql)
