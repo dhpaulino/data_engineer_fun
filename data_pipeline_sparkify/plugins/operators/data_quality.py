@@ -7,16 +7,23 @@ class DataQualityOperator(BaseOperator):
     ui_color = '#89DA59'
 
     @apply_defaults
-    def __init__(self,
-                 # Define your operators params (with defaults) here
-                 # Example:
-                 # conn_id = your-connection-name
-                 *args, **kwargs):
+    def __init__(self, conn_id, queries, expected_results, *args, **kwargs):
 
         super(DataQualityOperator, self).__init__(*args, **kwargs)
-        # Map params here
-        # Example:
-        # self.conn_id = conn_id
+        self.conn_id = conn_id
+        if len(queries) != len(expected_results):
+            raise ValueError("expected_results size should match sql_list size")
+        self.sql_list = queries
+        self.expected_results = expected_results
 
     def execute(self, context):
-        self.log.info('DataQualityOperator not implemented yet')
+        self.hook = PostgresHook(postgres_conn_id=self.conn_id)
+
+        for query, expected in zip(self.sql_list, self.expected_results):
+            self.logger.info(f"Executing check (expected result {expected}):\n\t{query}")
+            result = self.hook.get_records(query)
+            if len(result) != 1:
+                raise Exception(f"The number of rows is different than 1 ({len(result)} got)")
+            if result[0][0] != expected:
+                raise Exception(f"Expected value {expected}, but got {result[0][0]}")
+            self.logger.info("Check passed!")

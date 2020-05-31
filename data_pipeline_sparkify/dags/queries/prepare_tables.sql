@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS songs (
 CREATE TABLE IF NOT EXISTS time (
     start_time timestamp PRIMARY KEY,
     hour integer,
+    day integer,
     week integer,
     month integer,
     year integer,
