@@ -9,18 +9,28 @@ from airflow.operators.postgres_operator import PostgresOperator
 queries_has_row = [f"SELECT EXISTS(SELECT * FROM {table})"
                    for table in ["songplays", "songs", "artists", "users", "time"]]
 
-# no duplicates
+# TODO: create different staging tables for each dag run to enable parallel run of the DAG
 dag = DAG('songplays_S3_to_DWH',
           description='Load and transform data in Redshift with Airflow',
-          schedule_interval="@once",
+          schedule_interval="@daily",
           start_date=datetime(2018, 11, 1),
+          end_date=datetime(2018, 11, 30),
+          max_active_runs=1,
           default_args={
-              "owner": "dhpaulino"
+              "owner": "dhpaulino",
+              "depends_on_past": False,
+              "retries": 3,
+              "catchup": False,
+              "email_on_retry": False
           }
         )
 
 
 start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
+
+'''
+# -----UNCOMMENT TO RESET THE DATABASE BEFORE EACH DAG RUN-----
+
 drop_all_tables_for_test_dag = PostgresOperator(
     task_id="drop_all_tables_for_test_dag",
     dag=dag,
@@ -29,7 +39,7 @@ drop_all_tables_for_test_dag = PostgresOperator(
          for table in ["staging_events", "staging_songs", "songplays", "songs", "artists", "users", "time"]]
 )
 drop_all_tables_for_test_dag >> start_operator
-
+'''
 prepare_tables = PostgresOperator(
     task_id="prepare_tables",
     dag=dag,
@@ -101,6 +111,7 @@ run_quality_checks = DataQualityOperator(
     expected_results=[True, True, True, True, True]
 )
 end_operator = DummyOperator(task_id='Stop_execution',  dag=dag)
+
 ##### ORDERING DAGS #####
 start_operator >> prepare_tables
 
