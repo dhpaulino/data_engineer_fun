@@ -1,4 +1,4 @@
-# Sparkify's Data Lake
+# Sparkify's  Data Pipeline
 
   
 
@@ -33,3 +33,35 @@ $ airflow scheduler
 8. Use the UI to enable the `songplays_S3_to_DWH`dag
 
 
+### Datasets
+* Log data: ```s3://udacity-dend/log_data```
+* Song data: ```s3://udacity-dend/song_data```
+### Pipeline
+
+![pipeline](img/pipeline.png)
+
+Tasks:
+
+* prepare_tables: clean staging tables and create staging/dimension/fact tables if have to
+* Stage_events: copies the log data files relative to the execution date to the table `staging_events`
+* Stage_songs: copies the song data files to the table `staging_songs`
+* Load_songplays_fact_table: adds the data related with music playing from `staging_events` to `songplays` table
+* Load_users_dim_table: adds the data related to the fact from `staging_events` to `users` table
+* Load_songs_dim_table: Replaces the data from `songs` with the ones in `staging_songs`
+* Load_artists_dim_table: Replaces the data from `artists` with the ones in `staging_songs`
+* Load_time_dim_table: adds the data related to the fact from `staging_events` to `users` table
+* Run_data_quality_checks: Validates if the data in the tables are correct (only checks if the tables aren't empty right now)
+
+### Operators
+
+#### StageToRedshiftOperator
+
+With a redshift connection and S3 templatable path, copies the data from S3 to a staging table. It uses IAM roles 
+delegation to read from s3.
+
+
+#### DataQualityOperator
+Executes a list of sql queries against a redshift connection and test the result with the ones expected by the user.
+
+### LoadTableToTableOperator
+Given a sql, loads the data from one table to another. Optional truncate first.
