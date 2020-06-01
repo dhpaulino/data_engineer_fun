@@ -93,9 +93,9 @@ ON CONFLICT (start_time) DO NOTHING
 # FIND SONGS
 
 song_select = """
-SELECT sp.song_id, sp.artist_id FROM songplays as sp 
-INNER JOIN songs as s  ON sp.song_id = s.song_id 
-INNER JOIN artists as a ON sp.artist_id = a.artist_id 
+SELECT s.song_id, s.artist_id 
+FROM songs as s
+    INNER JOIN artists as a ON s.artist_id = a.artist_id
 WHERE s.title = %s 
 AND a.name = %s 
 AND s.duration = %s
