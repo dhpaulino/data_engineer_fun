@@ -15,13 +15,14 @@ queries_has_row = [f"SELECT EXISTS(SELECT * FROM {table})"
 # TODO: create different staging tables for each dag run to enable parallel run of the DAG
 dag = DAG('songplays_S3_to_DWH',
           description='Load and transform data in Redshift with Airflow',
-          schedule_interval="@daily",
+          schedule_interval="@hourly",
           start_date=datetime(2018, 11, 1),
           end_date=datetime(2018, 11, 30),
           max_active_runs=1,
           default_args={
               "owner": "dhpaulino",
               "depends_on_past": False,
+              "start_date" : datetime(2018, 11, 1),
               "retries": 3,
               "catchup": False,
               "email_on_retry": False
