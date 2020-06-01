@@ -9,10 +9,6 @@ from airflow.operators.postgres_operator import PostgresOperator
 queries_has_row = [f"SELECT EXISTS(SELECT * FROM {table})"
                    for table in ["songplays", "songs", "artists", "users", "time"]]
 
-# TODO: PUT  WHERE page='NextSong' ON QUERIES
-# TODO: JOIN ON NULL FOR ONLY ADD NO REPEATED VALUES
-# FIXME: data is being added (not truncate first) on dimensions based on staging (not songplays), but how to ensure
-
 # no duplicates
 dag = DAG('songplays_S3_to_DWH',
           description='Load and transform data in Redshift with Airflow',
