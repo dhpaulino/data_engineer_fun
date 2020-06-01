@@ -1,9 +1,8 @@
 from airflow.hooks.postgres_hook import PostgresHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
-from airflow.hooks.postgres_hook import PostgresHook
 
-# TODO: enables read based on timestamp
+
 class StageToRedshiftOperator(BaseOperator):
     """ Copies the data from a given s3 location to a table in redshift"""
     ui_color = '#358140'
@@ -21,10 +20,10 @@ class StageToRedshiftOperator(BaseOperator):
         self.copy_parameters = copy_parameters
 
     def execute(self, context):
-        self.hook = PostgresHook(postgres_conn_id=self.redshift_conn_id)
+        hook = PostgresHook(postgres_conn_id=self.redshift_conn_id)
         copy_sql = f"COPY {self.output_table} FROM 's3://{self.s3_bucket}/{self.s3_key}'\
                     CREDENTIALS 'aws_iam_role={self.arn_iam_role}'\
                     {self.copy_parameters}"
         self.log.info('Executing COPY command...')
         self.logger.info(copy_sql)
-        self.hook.run(copy_sql)
+        hook.run(copy_sql)

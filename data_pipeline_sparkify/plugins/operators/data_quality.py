@@ -2,8 +2,9 @@ from airflow.hooks.postgres_hook import PostgresHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
-class DataQualityOperator(BaseOperator):
 
+class DataQualityOperator(BaseOperator):
+    """" Checks if a given list of sql queries matches the expected results"""
     ui_color = '#89DA59'
 
     @apply_defaults
@@ -17,11 +18,11 @@ class DataQualityOperator(BaseOperator):
         self.expected_results = expected_results
 
     def execute(self, context):
-        self.hook = PostgresHook(postgres_conn_id=self.conn_id)
+        hook = PostgresHook(postgres_conn_id=self.conn_id)
 
         for query, expected in zip(self.sql_list, self.expected_results):
             self.logger.info(f"Executing check (expected result {expected}):\n\t{query}")
-            result = self.hook.get_records(query)
+            result = hook.get_records(query)
             if len(result) != 1:
                 raise Exception(f"The number of rows is different than 1 ({len(result)} got)")
             if result[0][0] != expected:

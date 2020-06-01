@@ -1,9 +1,12 @@
-from datetime import datetime, timedelta
-from airflow.models import Variable
-from airflow import DAG
-from airflow.operators.dummy_operator import DummyOperator
-from airflow.operators import (StageToRedshiftOperator, DataQualityOperator)
+"""
+Implementation of pipeline to read data from s3 and fill a snow flake schema on redshift
+"""
+from datetime import datetime
 
+from airflow import DAG
+from airflow.models import Variable
+from airflow.operators import (StageToRedshiftOperator, DataQualityOperator)
+from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.postgres_operator import PostgresOperator
 
 queries_has_row = [f"SELECT EXISTS(SELECT * FROM {table})"
@@ -23,10 +26,9 @@ dag = DAG('songplays_S3_to_DWH',
               "catchup": False,
               "email_on_retry": False
           }
-        )
+          )
 
-
-start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
+start_operator = DummyOperator(task_id='Begin_execution', dag=dag)
 
 '''
 # -----UNCOMMENT TO RESET THE DATABASE BEFORE EACH DAG RUN-----
@@ -40,6 +42,8 @@ drop_all_tables_for_test_dag = PostgresOperator(
 )
 drop_all_tables_for_test_dag >> start_operator
 '''
+
+# clean staging tables and create staging/dimension/fact tables if have to
 prepare_tables = PostgresOperator(
     task_id="prepare_tables",
     dag=dag,
@@ -56,7 +60,6 @@ stage_events_to_redshift = StageToRedshiftOperator(
     copy_parameters="JSON 's3://udacity-dend/log_json_path.json'",
     dag=dag
 )
-
 
 stage_songs_to_redshift = StageToRedshiftOperator(
     task_id='Stage_songs',
@@ -96,7 +99,6 @@ load_artists_dimension_table = PostgresOperator(
     sql="queries/move_staging_to_dim_artists_table.sql"
 )
 
-# FIXME: no data is load in the table
 load_time_dimension_table = PostgresOperator(
     task_id='Load_time_dim_table',
     dag=dag,
@@ -110,7 +112,7 @@ run_quality_checks = DataQualityOperator(
     queries=queries_has_row,
     expected_results=[True, True, True, True, True]
 )
-end_operator = DummyOperator(task_id='Stop_execution',  dag=dag)
+end_operator = DummyOperator(task_id='Stop_execution', dag=dag)
 
 ##### ORDERING DAGS #####
 start_operator >> prepare_tables
