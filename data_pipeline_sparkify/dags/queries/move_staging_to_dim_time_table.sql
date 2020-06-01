@@ -9,5 +9,6 @@ INSERT INTO time (start_time, hour, day, week, month, year, weekday)
             EXTRACT(year from start_time),
             EXTRACT(weekday from start_time)
         FROM staging_events
+        WHERE page='NextSong'
     )
 

@@ -16,5 +16,5 @@ INSERT INTO users
             se.level
         FROM staging_events AS se
             LEFT JOIN users AS u ON se.userid = u.user_id
-        WHERE u.user_id IS NULL
+        WHERE u.user_id IS NULL AND se.page='NextSong'
     )

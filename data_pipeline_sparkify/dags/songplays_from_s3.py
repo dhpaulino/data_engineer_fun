@@ -5,7 +5,7 @@ from datetime import datetime
 
 from airflow import DAG
 from airflow.models import Variable
-from airflow.operators import (StageToRedshiftOperator, DataQualityOperator)
+from airflow.operators import (StageToRedshiftOperator, DataQualityOperator, LoadTableToTableOperator)
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.postgres_operator import PostgresOperator
 
@@ -13,11 +13,11 @@ queries_has_row = [f"SELECT EXISTS(SELECT * FROM {table})"
                    for table in ["songplays", "songs", "artists", "users", "time"]]
 
 # TODO: create different staging tables for each dag run to enable parallel run of the DAG
-dag = DAG('songplays_S3_to_DWH',
+dag = DAG('songplays_from_s3',
           description='Load and transform data in Redshift with Airflow',
-          schedule_interval="@hourly",
+          schedule_interval="@daily",
           start_date=datetime(2018, 11, 1),
-          end_date=datetime(2018, 11, 30),
+          end_date=datetime(2018, 11, 3),
           max_active_runs=1,
           default_args={
               "owner": "dhpaulino",
@@ -73,34 +73,36 @@ stage_songs_to_redshift = StageToRedshiftOperator(
     dag=dag
 )
 
-load_songplays_fact_table = PostgresOperator(
+load_songplays_fact_table = LoadTableToTableOperator(
     task_id="Load_songplays_fact_table",
     dag=dag,
     postgres_conn_id="redshift_conn",
     sql="queries/move_staging_to_fact_songplays_table.sql"
 )
-load_users_dimension_table = PostgresOperator(
+load_users_dimension_table = LoadTableToTableOperator(
     task_id='Load_users_dim_table',
     dag=dag,
     postgres_conn_id="redshift_conn",
     sql="queries/move_staging_to_dim_users_table.sql"
 )
 
-load_songs_dimension_table = PostgresOperator(
+load_songs_dimension_table = LoadTableToTableOperator(
     task_id='Load_songs_dim_table',
     dag=dag,
     postgres_conn_id="redshift_conn",
-    sql="queries/move_staging_to_dim_songs_table.sql"
+    sql="queries/move_staging_to_dim_songs_table.sql",
+    table_to_truncate="songs"
 )
 
-load_artists_dimension_table = PostgresOperator(
+load_artists_dimension_table = LoadTableToTableOperator(
     task_id='Load_artists_dim_table',
     dag=dag,
     postgres_conn_id="redshift_conn",
-    sql="queries/move_staging_to_dim_artists_table.sql"
+    sql="queries/move_staging_to_dim_artists_table.sql",
+    table_to_truncate="artists"
 )
 
-load_time_dimension_table = PostgresOperator(
+load_time_dimension_table = LoadTableToTableOperator(
     task_id='Load_time_dim_table',
     dag=dag,
     postgres_conn_id="redshift_conn",
