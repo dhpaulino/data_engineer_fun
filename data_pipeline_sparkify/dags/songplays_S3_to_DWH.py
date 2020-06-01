@@ -2,8 +2,7 @@ from datetime import datetime, timedelta
 from airflow.models import Variable
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
-from airflow.operators import (StageToRedshiftOperator, LoadFactOperator,
-                                LoadDimensionOperator, DataQualityOperator)
+from airflow.operators import (StageToRedshiftOperator, DataQualityOperator)
 
 from airflow.operators.postgres_operator import PostgresOperator
 
@@ -13,11 +12,12 @@ queries_has_row = [f"SELECT EXISTS(SELECT * FROM {table})"
 # TODO: PUT  WHERE page='NextSong' ON QUERIES
 # TODO: JOIN ON NULL FOR ONLY ADD NO REPEATED VALUES
 # FIXME: data is being added (not truncate first) on dimensions based on staging (not songplays), but how to ensure
+
 # no duplicates
 dag = DAG('songplays_S3_to_DWH',
           description='Load and transform data in Redshift with Airflow',
-          schedule_interval=None,
-          start_date=datetime(2020, 5, 29),
+          schedule_interval="@once",
+          start_date=datetime(2018, 11, 1),
           default_args={
               "owner": "dhpaulino"
           }
@@ -46,10 +46,11 @@ stage_events_to_redshift = StageToRedshiftOperator(
     arn_iam_role=Variable.get("redshift_s3_role"),
     output_table="staging_events",
     s3_bucket="udacity-dend",
-    s3_key="log_data",
+    s3_key="{{ execution_date.strftime('log_data/%Y/%m/%Y-%m-%d-events.json') }}",
     copy_parameters="JSON 's3://udacity-dend/log_json_path.json'",
     dag=dag
 )
+
 
 stage_songs_to_redshift = StageToRedshiftOperator(
     task_id='Stage_songs',

@@ -7,11 +7,11 @@ from airflow.hooks.postgres_hook import PostgresHook
 class StageToRedshiftOperator(BaseOperator):
     """ Copies the data from a given s3 location to a table in redshift"""
     ui_color = '#358140'
+    template_fields = ['s3_key']
 
     @apply_defaults
     def __init__(self, redshift_conn_id, arn_iam_role, output_table, s3_bucket, s3_key, copy_parameters,
                  *args, **kwargs):
-
         super(StageToRedshiftOperator, self).__init__(*args, **kwargs)
         self.redshift_conn_id = redshift_conn_id
         self.arn_iam_role = arn_iam_role
@@ -28,8 +28,3 @@ class StageToRedshiftOperator(BaseOperator):
         self.log.info('Executing COPY command...')
         self.logger.info(copy_sql)
         self.hook.run(copy_sql)
-
-
-
-
-
