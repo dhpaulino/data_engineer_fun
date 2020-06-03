@@ -27,3 +27,4 @@ $ python etl.py
 * `create_tables.py` drops and creates your tables. You run this file to reset your tables before each time you run your ETL scripts.
 * `etl.py` reads and processes files from song_data and log_data and loads them into your tables. You can fill this out based on your work in the ETL notebook.
 * `sql_queries.py` contains all your sql queries, and is imported into the last three files above
+* `dwh.cfg` is the project configuration file
