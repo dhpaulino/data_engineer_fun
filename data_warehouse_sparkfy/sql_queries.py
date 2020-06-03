@@ -62,11 +62,11 @@ CREATE TABLE IF NOT EXISTS staging_songs (
 songplay_table_create = """
 CREATE TABLE IF NOT EXISTS songplays (
     songplay_id INTEGER IDENTITY(0,1) PRIMARY KEY,
-    start_time timestamp REFERENCES time(start_time),
-    user_id integer REFERENCES users(user_id),
+    start_time timestamp NOT NULL REFERENCES time(start_time),
+    user_id integer NOT NULL REFERENCES users(user_id),
     level char(4),
-    song_id text REFERENCES songs(song_id),
-    artist_id text REFERENCES artists(artist_id),
+    song_id text NOT NULL REFERENCES songs(song_id),
+    artist_id text NOT NULL REFERENCES artists(artist_id),
     session_id integer,
     location text,
     user_agent text
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS songplays (
 
 user_table_create = """
 CREATE TABLE IF NOT EXISTS users (
-    user_id integer PRIMARY KEY,
+    user_id integer PRIMARY KEY SORTKEY DISTKEY,
     first_name text,
     last_name text,
     gender char(1) ENCODE BYTEDICT,
@@ -83,8 +83,8 @@ CREATE TABLE IF NOT EXISTS users (
 
 song_table_create = """
 CREATE TABLE IF NOT EXISTS songs (
-    song_id text PRIMARY KEY,
-    title text,
+    song_id text PRIMARY KEY SORTKEY DISTKEY,
+    title text NOT NULL,
     artist_id text REFERENCES artists(artist_id),
     year integer,
     duration float
@@ -92,8 +92,8 @@ CREATE TABLE IF NOT EXISTS songs (
 
 artist_table_create = """
 CREATE TABLE IF NOT EXISTS artists (
-    artist_id text PRIMARY KEY,
-    name text,
+    artist_id text PRIMARY KEY SORTKEY DISTKEY,
+    name text NOT NULL,
     location text,
     latitude float,
     longitude float
@@ -101,13 +101,13 @@ CREATE TABLE IF NOT EXISTS artists (
 
 time_table_create = """
 CREATE TABLE IF NOT EXISTS time (
-    start_time timestamp PRIMARY KEY,
-    hour integer,
-    day integer,
-    week integer,
-    month integer,
-    year integer,
-    weekday integer
+    start_time timestamp PRIMARY KEY SORTKEY DISTKEY,
+    hour integer NOT NULL,
+    day integer NOT NULL,
+    week integer NOT NULL,
+    month integer NOT NULL,
+    year integer NOT NULL,
+    weekday integer NOT NULL
 )"""
 
 # STAGING TABLES
@@ -127,16 +127,19 @@ INSERT INTO songplays (start_time, user_id ,level, song_id, artist_id, session_i
 (
     SELECT ts, userid, level, song_id, artist_id, sessionid, location, useragent
     FROM staging_events as se
-    INNER JOIN staging_songs as ss ON se.song=ss.title
+        INNER JOIN staging_songs as ss 
+            ON se.song=ss.title
+            AND se.artist = ss.artist_name
+    WHERE page  =  'NextSong'
 ) 
 """
-
+# FIXME: we could have repeated users from previous etl
 user_table_insert = """
 INSERT INTO users (user_id, first_name, last_name, gender, level) 
 (
     SELECT DISTINCT userid, firstName, lastName, gender, level
     FROM staging_events
-    WHERE userid IS NOT NULL
+    WHERE page  =  'NextSong'
 )
 """
 
@@ -162,6 +165,7 @@ INSERT INTO time (start_time, hour, day, week, month, year, weekday)
  (
    SELECT DISTINCT ts, EXTRACT(hour from ts), EXTRACT(day from ts), EXTRACT(week from ts), EXTRACT(month from ts), EXTRACT(year from ts), EXTRACT(weekday from ts)
    FROM staging_events
+   WHERE page  =  'NextSong'
 )
 """
 
